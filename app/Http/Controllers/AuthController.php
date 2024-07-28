@@ -26,7 +26,7 @@ class AuthController extends Controller
         $accessToken = $user->createToken(
             'access_token',
             [TokenAbility::ACCESS_API->value],
-            now()->addMinutes((int) config('sanctum.expiration'))
+            now()->addMinutes((int) config('sanctum.access_expiration'))
         );
 
         $refreshToken = $user->createToken(
@@ -59,10 +59,12 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $user->tokens()->delete();
+
         $accessToken = $user->createToken(
             'access_token',
             [TokenAbility::ACCESS_API->value],
-            now()->addMinutes((int) config('sanctum.expiration'))
+            now()->addMinutes((int) config('sanctum.access_expiration'))
         );
 
         $refreshToken = $user->createToken(
@@ -94,7 +96,7 @@ class AuthController extends Controller
         $accessToken = auth()->user()->createToken(
             'access_token',
             [TokenAbility::ACCESS_API->value],
-            now()->addMinutes((int) config('sanctum.expiration'))
+            now()->addMinutes((int) config('sanctum.access_expiration'))
         );
 
         $refreshToken = auth()->user()->createToken(
