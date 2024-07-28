@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TokenAbility;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,11 +23,22 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $token = $user->createToken($request->name)->plainTextToken;
+        $accessToken = $user->createToken(
+            'access_token',
+            [TokenAbility::ACCESS_API->value],
+            now()->addMinutes((int) config('sanctum.expiration'))
+        );
+
+        $refreshToken = $user->createToken(
+            'refresh_token',
+            [TokenAbility::ISSUE_ACCESS_TOKEN->value],
+            now()->addMinutes((int) config('sanctum.refresh_expiration'))
+        );
 
         return response()->json([
             'user' => $user,
-            'token' => $token
+            'access_token' => $accessToken->plainTextToken,
+            'refresh_token' => $refreshToken->plainTextToken,
         ], 201);
     }
 
@@ -39,17 +51,28 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message' => 'The provided credentials are incorrect.'
+                'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
 
-        $token = $user->createToken($user->name)->plainTextToken;
+        $accessToken = $user->createToken(
+            'access_token',
+            [TokenAbility::ACCESS_API->value],
+            now()->addMinutes((int) config('sanctum.expiration'))
+        );
+
+        $refreshToken = $user->createToken(
+            'refresh_token',
+            [TokenAbility::ISSUE_ACCESS_TOKEN->value],
+            now()->addMinutes((int) config('sanctum.refresh_expiration'))
+        );
 
         return response()->json([
             'user' => $user,
-            'token' => $token
+            'access_token' => $accessToken->plainTextToken,
+            'refresh_token' => $refreshToken->plainTextToken,
         ], 200);
     }
 
@@ -58,7 +81,30 @@ class AuthController extends Controller
         auth()->user()->tokens()->delete();
 
         return response()->json([
-            'message' => 'Logout successful.'
+            'message' => 'Logout successful.',
+        ], 200);
+    }
+
+    public function refreshToken()
+    {
+        auth()->user()->tokens()->delete();
+
+        $accessToken = auth()->user()->createToken(
+            'access_token',
+            [TokenAbility::ACCESS_API->value],
+            now()->addMinutes((int) config('sanctum.expiration'))
+        );
+
+        $refreshToken = auth()->user()->createToken(
+            'refresh_token',
+            [TokenAbility::ISSUE_ACCESS_TOKEN->value],
+            now()->addMinutes((int) config('sanctum.refresh_expiration'))
+        );
+
+        return response()->json([
+            'user' => auth()->user(),
+            'access_token' => $accessToken->plainTextToken,
+            'refresh_token' => $refreshToken->plainTextToken,
         ], 200);
     }
 }
