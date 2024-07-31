@@ -2,6 +2,7 @@
 
 use App\Enums\TokenAbility;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,5 +22,13 @@ Route::group(['middleware' => ['auth:sanctum', 'throttle:60,1']], function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
         Route::get('/user/me', [UserController::class, 'me'])->name('user.me');
+
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+
+        Route::get('/user/{user}', [UserController::class, 'show'])->name('users.show');
+
+        Route::post('/message', [MessageController::class, 'store'])->name('message.store');
+
+        Route::get('/messages/{id}', [MessageController::class, 'show'])->name('messages.show');
     });
 });
